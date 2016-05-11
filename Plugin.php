@@ -22,6 +22,7 @@ class ArticleImg_Plugin implements Typecho_Plugin_Interface
         $info = ArticleImg_Plugin::sqlInstall();
         Typecho_Plugin::factory('admin/write-post.php')->option = array(__CLASS__, 'setThumbnail');
         Typecho_Plugin::factory('admin/write-page.php')->option = array(__CLASS__, 'setThumbnail');
+        Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array(__CLASS__, "changeURL");
         return _t($info);
     }
 
@@ -32,10 +33,12 @@ class ArticleImg_Plugin implements Typecho_Plugin_Interface
      * @return void
      */
     public static function setThumbnail($post) {
+      $db = Typecho_Db::get();
+      $row = $db->fetchRow($db->select('thumb')->from('table.contents')->where('cid = ?', $post->cid));
       $html = '
       <section class="typecho-post-option">
         <label for="thumbnail-url" class="typecho-label">文章顶部图片URL</label>
-        <p><input id="article-thumbnail" name="thumbnail-url" type="text" value="" class="w-100 text" /></p>
+        <p><input id="thumbnail-url" name="thumbnail-url" type="text" value="'.$row['thumb'].'" class="w-100 text" /></p>
       </section>
       ';
       _e($html);
@@ -79,9 +82,9 @@ class ArticleImg_Plugin implements Typecho_Plugin_Interface
             ('SQLite' == $type && ('HY000' == $code || 1 == $code))) {
           try {
             if ('Mysql' == $type) {
-              $db->query("ALTER TABLE `".$prefix."contents` ADD `thumb` INT( 10 ) NOT NULL  DEFAULT '0' COMMENT '文章顶部缩略图URL';");
+              $db->query("ALTER TABLE `".$prefix."contents` ADD `thumb` VARCHAR(255) NOT NULL  DEFAULT 'unknown' COMMENT '文章顶部缩略图URL';");
             } else if ('SQLite' == $type) {
-              $db->query("ALTER TABLE `".$prefix."contents` ADD `thumb` INT( 10 ) NOT NULL  DEFAULT '0'");
+              $db->query("ALTER TABLE `".$prefix."contents` ADD `thumb` VARCHAR(255) NOT NULL  DEFAULT 'unknown'");
             } else {
               throw new Typecho_Plugin_Exception('不支持的数据库类型：'.$type);
             }
@@ -107,8 +110,23 @@ class ArticleImg_Plugin implements Typecho_Plugin_Interface
      */
     public static function personalConfig(Typecho_Widget_Helper_Form $form){}
 
+
     /**
-     * 插件实现方法
+     * 发布文章同时更新URL
+     *
+     * @access public
+     * @return void
+     */
+    public static function changeURL($contents, $post)
+    {
+      $thumburl = $post->request->get('thumbnail-url', _t("unknown"));
+  		$db = Typecho_Db::get();
+      $sql = $db->update('table.contents')->rows(array('thumb' => $thumburl))->where('cid = ?', $post->cid);
+  		$db->query($sql);
+    }
+
+    /**
+     * 前台输出url
      *
      * @access public
      * @return void
