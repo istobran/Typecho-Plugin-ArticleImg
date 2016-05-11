@@ -63,6 +63,8 @@ class ArticleImg_Plugin implements Typecho_Plugin_Interface
      */
     public static function config(Typecho_Widget_Helper_Form $form)
     {
+      $defaultUrl = new Typecho_Widget_Helper_Form_Element_Text('defaultUrl', NULL, _t('http://static.bangz.me/thumb/default.png'), _t('默认文章图片URL'), _t('在这里输入默认的图片URL'));
+      $form->addInput($defaultUrl);
     }
 
     //SQL创建
@@ -119,7 +121,8 @@ class ArticleImg_Plugin implements Typecho_Plugin_Interface
      */
     public static function changeURL($contents, $post)
     {
-      $thumburl = $post->request->get('thumbnail-url', _t("unknown"));
+      $defaultUrl = Typecho_Widget::widget('Widget_Options')->plugin('ArticleImg')->defaultUrl;
+      $thumburl = $post->request->get('thumbnail-url', _t($defaultUrl));
   		$db = Typecho_Db::get();
       $sql = $db->update('table.contents')->rows(array('thumb' => $thumburl))->where('cid = ?', $post->cid);
   		$db->query($sql);
