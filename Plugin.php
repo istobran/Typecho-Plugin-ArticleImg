@@ -24,7 +24,7 @@ class ArticleImg_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('admin/write-page.php')->option = array(__CLASS__, 'setThumbnail');
         Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array(__CLASS__, "changeURL");
         Typecho_Plugin::factory('Widget_Contents_Page_Edit')->finishPublish = array(__CLASS__, "changeURL");
-        Typecho_Plugin::factory('Widget_Archive')->select = array('ArticleImg_Plugin', 'selectHandle');
+        Typecho_Plugin::factory('Widget_Archive')->select = array(__CLASS__, 'selectHandle');
         return _t($info);
     }
 
