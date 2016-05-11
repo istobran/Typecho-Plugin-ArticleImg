@@ -19,8 +19,10 @@ class ArticleImg_Plugin implements Typecho_Plugin_Interface
      */
     public static function activate()
     {
+        $info = ArticleImg_Plugin::sqlInstall();
         Typecho_Plugin::factory('admin/write-post.php')->option = array(__CLASS__, 'setThumbnail');
         Typecho_Plugin::factory('admin/write-page.php')->option = array(__CLASS__, 'setThumbnail');
+        return _t($info);
     }
 
     /**
