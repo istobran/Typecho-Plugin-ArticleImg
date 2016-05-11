@@ -58,9 +58,42 @@ class ArticleImg_Plugin implements Typecho_Plugin_Interface
      */
     public static function config(Typecho_Widget_Helper_Form $form)
     {
-        /** 分类名称 */
-        $name = new Typecho_Widget_Helper_Form_Element_Text('word', NULL, 'Hello World', _t('说点什么'));
-        $form->addInput($name);
+    }
+
+    //SQL创建
+    public static function sqlInstall()
+    {
+      $db = Typecho_Db::get();
+      $type = explode('_', $db->getAdapterName());
+      $type = array_pop($type);
+      $prefix = $db->getPrefix();
+      try {
+        $select = $db->select('table.contents.thumb')->from('table.contents');
+        $db->query($select, Typecho_Db::READ);
+        return '检测到图片url字段，插件启用成功';
+      } catch (Typecho_Db_Exception $e) {
+        $code = $e->getCode();
+        if(('Mysql' == $type && (1054 == $code || '42S22' == $code)) ||
+            ('SQLite' == $type && ('HY000' == $code || 1 == $code))) {
+          try {
+            if ('Mysql' == $type) {
+              $db->query("ALTER TABLE `".$prefix."contents` ADD `thumb` INT( 10 ) NOT NULL  DEFAULT '0' COMMENT '文章顶部缩略图URL';");
+            } else if ('SQLite' == $type) {
+              $db->query("ALTER TABLE `".$prefix."contents` ADD `thumb` INT( 10 ) NOT NULL  DEFAULT '0'");
+            } else {
+              throw new Typecho_Plugin_Exception('不支持的数据库类型：'.$type);
+            }
+            return '建立图片url字段，插件启用成功';
+          } catch (Typecho_Db_Exception $e) {
+            $code = $e->getCode();
+            if(('Mysql' == $type && 1060 == $code) ) {
+              return '图片url字段已经存在，插件启用成功';
+            }
+            throw new Typecho_Plugin_Exception('插件启用失败。错误号：'.$code);
+          }
+        }
+        throw new Typecho_Plugin_Exception('数据表检测失败，插件启用失败。错误号：'.$code);
+      }
     }
 
     /**
