@@ -162,10 +162,26 @@ class ArticleImg_Plugin implements Typecho_Plugin_Interface
      */
     public static function selectHandle($archive)
     {
-      $db = Typecho_Db::get();
-      $options = Typecho_Widget::widget('Widget_Options');
-      //这里使用通配符*可能导致性能问题
-      return $db->select('thumb')->from('table.contents')->where('table.contents.status = ?', 'publish')
-                  ->where('table.contents.created < ?', $options->gmtTime);
+      $user = Typecho_Widget::widget('Widget_User');
+      if ('post' == $archive->parameter->type || 'page' == $archive->parameter->type) {
+          if ($user->hasLogin()) {
+              $select = $archive->select()->where('table.contents.status = ? OR table.contents.status = ? OR
+                      (table.contents.status = ? AND table.contents.authorId = ?)',
+                      'publish', 'hidden', 'private', $user->uid);
+          } else {
+              $select = $archive->select()->where('table.contents.status = ? OR table.contents.status = ?',
+                      'publish', 'hidden');
+          }
+      } else {
+          if ($user->hasLogin()) {
+              $select = $archive->select()->where('table.contents.status = ? OR
+                      (table.contents.status = ? AND table.contents.authorId = ?)', 'publish', 'private', $user->uid);
+          } else {
+              $select = $archive->select()->where('table.contents.status = ?', 'publish');
+          }
+      }
+      $select->where('table.contents.created < ?', Typecho_Date::gmtTime());
+      $select->cleanAttribute('fields');
+      return $select;
     }
 }
